@@ -1,19 +1,30 @@
 package main
 
-import "github.com/mortdeus/links"
+import (
+	"fmt"
+	"github.com/mortdeus/links"
+)
 
 var (
-	l1 = new(CustomLink)
-	l2 = new(link.LinkedObject)
-	l3 = new(CustomEmbeddedLink)
+	root    = new(link.LinkedObject)
+	linkers = []link.Linker{
+		new(CustomLink),
+		new(link.LinkedObject),
+		new(CustomEmbeddedLink),
+		&CustomEmbeddedIfaceLink{new(CustomLink)},
+		&CustomEmbeddedIfaceLink{new(link.LinkedObject)},
+		&CustomEmbeddedIfaceLink{new(CustomEmbeddedLink)},
+	}
 )
 
 func main() {
-	link.LinkerInfo(l1)
-	link.LinkerInfo(l2)
-	link.LinkerInfo(l3)
+	for i := range linkers {
+		link.LinkerInfo(linkers[i])
+	}
+	link.Chain(root, linkers...)
+	fmt.Println("[Chainlink Graph]\n")
+	for child, i := root.Child(), 0; child != nil; child, i = child.(link.Linker).Child(), i+1 {
+		fmt.Printf("(%v) %v\n\t\t|\n\t\tV\n", i, child)
+	}
 
-	link.LinkerInfo(&CustomEmbeddedIfaceLink{l1})
-	link.LinkerInfo(&CustomEmbeddedIfaceLink{l2})
-	link.LinkerInfo(&CustomEmbeddedIfaceLink{l3})
 }
